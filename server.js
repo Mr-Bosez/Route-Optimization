@@ -7,6 +7,8 @@ const session = require("express-session");
 const helmet = require("helmet");
 const dotenv = require("dotenv");
 const { Server } = require("socket.io");
+const MongoStore = require('connect-mongo');
+
 
 dotenv.config();
 
@@ -27,6 +29,9 @@ app.use(
     secret: process.env.SESSION_SECRET || "secret_key",
     resave: false,
     saveUninitialized: true,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI,
+    }),
     cookie: {
       secure: false, // set to true if using https
       httpOnly: true,
@@ -35,8 +40,15 @@ app.use(
   })
 );
 
+
 // Connect MongoDB
-mongoose.connect(process.env.MONGO_URI);
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  ssl: process.env.MONGO_SSL === 'true'
+})
+.then(() => console.log("✅ MongoDB connected"))
+.catch(err => console.error("❌ MongoDB connection error:", err));
 
 // Mongoose Schema
 const trafficSchema = new mongoose.Schema({
